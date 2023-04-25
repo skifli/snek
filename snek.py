@@ -1,5 +1,5 @@
 import colorama
-import keyboard
+import pynput
 import time
 import os
 import random
@@ -177,18 +177,23 @@ def trigger_world_update() -> typing.Optional[bool]:
         world_updating = False
 
 
-def update_snake_direction(event) -> None:
-    event.name = event.name.lower()
+def update_snake_direction(
+    key: typing.Union[pynput.keyboard.Key, pynput.keyboard.KeyCode]
+) -> None:
+    try:
+        char = key.char
+    except AttributeError:
+        char = key
 
     last_direction = snake_data["direction"]
 
-    if event.name in ["w", "up"]:
+    if char in ["w", pynput.keyboard.Key.up]:
         snake_data["direction"] = "UP"
-    elif event.name in ["s", "down"]:
+    elif char in ["s", pynput.keyboard.Key.down]:
         snake_data["direction"] = "DOWN"
-    elif event.name in ["a", "left"]:
+    elif char in ["a", pynput.keyboard.Key.left]:
         snake_data["direction"] = "LEFT"
-    elif event.name in ["d", "right"]:
+    elif char in ["d", pynput.keyboard.Key.right]:
         snake_data["direction"] = "RIGHT"
 
     if last_direction != snake_data["direction"]:
@@ -196,7 +201,7 @@ def update_snake_direction(event) -> None:
         trigger_world_update()
 
 
-hook = keyboard.on_press(update_snake_direction)
+pynput.keyboard.Listener(on_press=update_snake_direction).start()
 os.system("cls" if os.name == "nt" else "clear")
 
 while True:
