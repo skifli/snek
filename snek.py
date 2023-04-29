@@ -13,6 +13,9 @@ terminal = os.get_terminal_size()
 world_width = terminal.columns // 2 - 2
 world_height = terminal.lines - 4
 
+chars_full = "\u2588"
+chars_medium = "\u2592" * 2
+
 old_world = None
 world_updating = False
 world = [["" for _ in range(world_width)] for _ in range(world_height)]
@@ -41,15 +44,33 @@ def print_world() -> None:
     print(f"\033[{terminal.lines}A\033[2K", end="")
 
     print(
-        f"\r{'██' * (world_width+2)}\n██{score_string}██{high_score_string}{'██' * (world_width - math.ceil((len(score_string) + len(high_score_string)) / 2))}█\n{'██' * (world_width+2)}"
+        f"\r{(chars_full*2) * (world_width+2)}\n{chars_full*2}{score_string}{chars_full*2}{high_score_string}{(chars_full*2) * (world_width - math.ceil((len(score_string) + len(high_score_string)) / 2))}{chars_full}\n{(chars_full*2) * (world_width+2)}"
     )
 
     for row in world:
         print(
-            f"██{''.join([f'{colorama.Fore.RED}██{colorama.Fore.RESET}' if entity == '*' else f'{colorama.Fore.RED}██{colorama.Fore.RESET}' if entity == '+' else f'{colorama.Fore.GREEN}██{colorama.Fore.RESET}' if entity == '@' else '▒▒' for entity in row])}██"
+            f"{chars_full*2}{''.join([f'{colorama.Fore.RED}{chars_full*2}{colorama.Fore.RESET}' if entity == '*' else f'{colorama.Fore.RED}{chars_full*2}{colorama.Fore.RESET}' if entity == '+' else f'{colorama.Fore.GREEN}{chars_full*2}{colorama.Fore.RESET}' if entity == '@' else chars_medium for entity in row])}{chars_full*2}"
         )
 
-    print(f"{'██' * (world_width+2)}", end="")
+    print(f"{chars_full*2 * (world_width+2)}", end="")
+
+
+def out_of_world() -> None:
+    global snake_data, apple_data
+
+    snake_data["vertices"] = [[0, 0]]
+    snake_data["number"] = 1
+    snake_data["direction"] = "RIGHT"
+
+    apple_data = {
+        "vertices": [
+            [
+                random.randrange(0, world_width),
+                random.randrange(0, world_height),
+            ]
+        ],
+        "number": 1,
+    }
 
 
 def update_world() -> typing.Optional[bool]:
@@ -93,20 +114,7 @@ def update_world() -> typing.Optional[bool]:
                 or snake_data["vertices"][index - 1][1] < 0
                 or snake_data["vertices"][index - 1][1] >= world_height
             ):  # Out of World
-                snake_data["vertices"] = [[0, 0]]
-                snake_data["number"] = 1
-                snake_data["direction"] = "RIGHT"
-
-                apple_data = {
-                    "vertices": [
-                        [
-                            random.randrange(0, world_width),
-                            random.randrange(0, world_height),
-                        ]
-                    ],
-                    "number": 1,
-                }
-
+                out_of_world()
                 break
 
     for vertice in snake_data["vertices"]:
