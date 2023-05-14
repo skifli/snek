@@ -29,7 +29,6 @@ apples = {
             "y": random.randrange(0, world["height"]),
         }
     ],
-    "number": 1,
 }
 
 world["grid"] = [
@@ -105,6 +104,51 @@ def update_world() -> None:
                 if snake["direction"] == "UP"
                 else 0
             )
+
+            if (
+                vertex["x"] < 0
+                or vertex["y"] < 0
+                or vertex["x"] >= world["width"]
+                or vertex["y"] >= world["height"]
+            ):
+                exit()
+
+    for vertex in snake["vertices"]:
+        if vertex in apples["vertices"]:
+            new_apple = {
+                "x": random.randrange(0, world["width"]),
+                "y": random.randrange(0, world["height"]),
+            }
+
+            apples["vertices"].remove(vertex)
+            apples["vertices"].append(new_apple)
+
+            world["grid"][new_apple["y"]][new_apple["x"]] = "A"
+
+            snake["vertices"].append(
+                {
+                    "x": snake["vertices"][-1]["x"]
+                    - (
+                        1
+                        if snake["direction"] == "RIGHT"
+                        else -1
+                        if snake["direction"] == "LEFT"
+                        else 0
+                    ),
+                    "y": snake["vertices"][-1]["y"]
+                    - (
+                        1
+                        if snake["direction"] == "DOWN"
+                        else -1
+                        if snake["direction"] == "UP"
+                        else 0
+                    ),
+                }
+            )
+
+    f = open("test.txt", "a")
+    f.write(f'{len(snake["vertices"])}\n')
+    f.flush()
 
     for index, vertex in enumerate(snake["vertices"]):
         world["grid"][vertex["y"]][vertex["x"]] = "H" if index == 0 else "S"
