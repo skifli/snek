@@ -15,7 +15,7 @@ world = {
 }
 
 snake = {
-    "vertices": [{"x": 0, "y": 0, "head": True}],
+    "vertices": [{"x": 0, "y": 0}],
     "score": 1,
     "high_score": 1,
     "direction": "RIGHT",
@@ -82,15 +82,11 @@ def update_world() -> None:
     world["updating"] = True
     last_vertex = None
 
-    for vertex in snake["vertices"][::-1]:
+    for vertex in snake["vertices"]:
         world["grid"][vertex["y"]][vertex["x"]] = ""
 
         if last_vertex:
-            vertex, last_vertex = {
-                "x": last_vertex["x"],
-                "y": last_vertex["y"],
-                "head": False,
-            }, vertex.copy()
+            vertex, last_vertex = last_vertex.copy(), vertex.copy()
         else:
             last_vertex = vertex.copy()
 
@@ -101,6 +97,7 @@ def update_world() -> None:
                 if snake["direction"] == "LEFT"
                 else 0
             )
+
             vertex["y"] += (
                 1
                 if snake["direction"] == "DOWN"
@@ -109,42 +106,8 @@ def update_world() -> None:
                 else 0
             )
 
-    for vertex in snake["vertices"]:
-        apple_vertex = {"x": vertex["x"], "y": vertex["y"]}
-
-        if apple_vertex in apples["vertices"]:
-            apples["vertices"].remove(apple_vertex)
-            apples["number"] += random.randint(1, 2)
-
-            snake["score"] += 1
-
-            if snake["score"] > snake["high_score"]:
-                snake["high_score"] = snake["score"]
-
-            new_vertice = {
-                "x": snake["vertices"][0]["x"]
-                - (
-                    1
-                    if snake["direction"] == "RIGHT"
-                    else +1
-                    if snake["direction"] == "LEFT"
-                    else 0
-                ),
-                "y": snake["vertices"][0]["y"]
-                - (
-                    1
-                    if snake["direction"] == "DOWN"
-                    else +1
-                    if snake["direction"] == "UP"
-                    else 0
-                ),
-                "head": False,
-            }
-
-            snake["vertices"].insert(0, new_vertice)
-
-    for vertex in snake["vertices"]:
-        world["grid"][vertex["y"]][vertex["x"]] = "H" if vertex["head"] else "S"
+    for index, vertex in enumerate(snake["vertices"]):
+        world["grid"][vertex["y"]][vertex["x"]] = "H" if index == 0 else "S"
 
     print_world()
 
