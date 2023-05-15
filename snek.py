@@ -1,188 +1,158 @@
-import colorama
-import pynput
-import time
-import os
-import random
-import math
-import typing
+import colorama, os, pynput, random, time, typing
 
 colorama.init()
 
 terminal = os.get_terminal_size()
 
-world_width = terminal.columns // 2 - 2
-world_height = terminal.lines - 4
+CHARS: typing.Final[dict] = {"full_shade": "\u2588", "medium_shade": "\u2592"}
 
-chars_full = "\u2588"
-chars_medium = "\u2592" * 2
+world = {
+    "grid": None,
+    "height": terminal.lines - 4,
+    "width": (terminal.columns // 2) - 2,
+    "last_update": time.perf_counter(),
+    "updating": False,
+}
 
-old_world = None
-world_updating = False
-world = [["" for _ in range(world_width)] for _ in range(world_height)]
-world[0][0] = "*"
-
-snake_data = {
-    "vertices": [[0, 0]],
-    "number": 1,
+snake = {
+    "vertices": [{"x": 0, "y": 0}],
+    "score": 1,
     "high_score": 1,
     "direction": "RIGHT",
     "last_direction": "RIGHT",
-    "last_update": time.perf_counter(),
 }
 
-apple_data = {
-    "vertices": [[random.randrange(0, world_width), random.randrange(0, world_height)]],
-    "number": 1,
+apples = {
+    "vertices": [
+        {
+            "x": random.randrange(0, world["width"]),
+            "y": random.randrange(0, world["height"]),
+        }
+    ],
 }
-world[apple_data["vertices"][0][1]][apple_data["vertices"][0][0]] = "+"
+
+world["grid"] = [
+    ["" for _ in range(world["width"])] for _ in range(world["height"])
+]  # Create grid
+
+world["grid"][snake["vertices"][0]["y"]][
+    snake["vertices"][0]["x"]
+] = "H"  # Add initial snake to grid
+world["grid"][apples["vertices"][0]["y"]][
+    apples["vertices"][0]["x"]
+] = "A"  # Add initial apple to grid
 
 
 def print_world() -> None:
-    score_string = f"Score: {snake_data['number']}"
-    high_score_string = f"High Score: {snake_data['high_score']}"
+    SCORE_STRING: typing.Final[str] = f"Score: {snake['score']}"
+    HIGH_SCORE_STRING: typing.Final[str] = f"High Score: {snake['high_score']}"
 
     print(f"\033[{terminal.lines}A\033[2K", end="")
-
+    print(f"\r{CHARS['full_shade']*terminal.columns}")
     print(
-        f"\r{(chars_full*2) * (world_width+2)}\n{chars_full*2}{score_string}{chars_full*2}{high_score_string}{(chars_full*2) * (world_width - math.ceil((len(score_string) + len(high_score_string)) / 2))}{chars_full}\n{(chars_full*2) * (world_width+2)}"
+        f"{CHARS['full_shade']*2}{SCORE_STRING}{CHARS['full_shade']*2}{HIGH_SCORE_STRING}{(CHARS['full_shade'] * (terminal.columns - 4 - len(SCORE_STRING) - len(HIGH_SCORE_STRING)))}"
     )
+    print(f"\r{CHARS['full_shade']*terminal.columns}")
 
-    for row in world:
+    for row in world["grid"]:
+        print(f"{CHARS['full_shade']*2}", end="")
         print(
-            f"{chars_full*2}{''.join([f'{colorama.Fore.RED}{chars_full*2}{colorama.Fore.RESET}' if entity == '*' else f'{colorama.Fore.RED}{chars_full*2}{colorama.Fore.RESET}' if entity == '+' else f'{colorama.Fore.GREEN}{chars_full*2}{colorama.Fore.RESET}' if entity == '@' else chars_medium for entity in row])}{chars_full*2}"
+            "".join(
+                [
+                    f"{colorama.Fore.RED}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
+                    if entity in ["A", "S"]  # Apple / Snake
+                    else f"{colorama.Fore.GREEN}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
+                    if entity == "H"  # Snake Head
+                    else CHARS["medium_shade"] * 2
+                    for entity in row
+                ]
+            ),
+            end="",
         )
+        print(f"{CHARS['full_shade']*2}")
 
-    print(f"{chars_full*2 * (world_width+2)}", end="")
-
-
-def out_of_world() -> None:
-    global snake_data, apple_data
-
-    snake_data["vertices"] = [[0, 0]]
-    snake_data["number"] = 1
-    snake_data["direction"] = "RIGHT"
-
-    apple_data = {
-        "vertices": [
-            [
-                random.randrange(0, world_width),
-                random.randrange(0, world_height),
-            ]
-        ],
-        "number": 1,
-    }
+    print(f"\r{CHARS['full_shade']*terminal.columns}", end="")
 
 
-def update_world() -> typing.Optional[bool]:
-    global apple_data
+def update_world() -> None:
+    if world["updating"]:
+        return
 
-    for vertice in snake_data["vertices"]:
-        world[vertice[1]][vertice[0]] = ""
+    world["updating"] = True
+    last_vertex = None
 
-    for vertice in apple_data["vertices"]:
-        world[vertice[1]][vertice[0]] = ""
+    for index, vertex in enumerate(snake["vertices"]):
+        world["grid"][vertex["y"]][vertex["x"]] = ""
 
-    last_block_vertices = None
-
-    for index in range(snake_data["number"], 0, -1):
-        if last_block_vertices:
-            snake_data["vertices"][index - 1], last_block_vertices = (
-                last_block_vertices[:],
-                snake_data["vertices"][index - 1][:],
-            )
+        if last_vertex is not None:
+            snake["vertices"][index], last_vertex = last_vertex, vertex.copy()
         else:
-            last_block_vertices = snake_data["vertices"][index - 1][:]
+            last_vertex = vertex.copy()
 
-            snake_data["vertices"][index - 1][0] += (
+            vertex["x"] += (
                 1
-                if snake_data["direction"] == "RIGHT"
+                if snake["direction"] == "RIGHT"
                 else -1
-                if snake_data["direction"] == "LEFT"
+                if snake["direction"] == "LEFT"
                 else 0
             )
-            snake_data["vertices"][index - 1][1] += (
+
+            vertex["y"] += (
                 1
-                if snake_data["direction"] == "DOWN"
+                if snake["direction"] == "DOWN"
                 else -1
-                if snake_data["direction"] == "UP"
+                if snake["direction"] == "UP"
                 else 0
             )
 
             if (
-                snake_data["vertices"][index - 1][0] < 0
-                or snake_data["vertices"][index - 1][0] >= world_width
-                or snake_data["vertices"][index - 1][1] < 0
-                or snake_data["vertices"][index - 1][1] >= world_height
-            ):  # Out of World
-                out_of_world()
-                break
+                vertex["x"] < 0
+                or vertex["y"] < 0
+                or vertex["x"] >= world["width"]
+                or vertex["y"] >= world["height"]
+            ):
+                exit()
 
-    for vertice in snake_data["vertices"]:
-        if [vertice[0], vertice[1]] in apple_data["vertices"]:
-            apple_data["vertices"].remove([vertice[0], vertice[1]])
-            apple_data["number"] += random.randint(1, 2)
+    for vertex in snake["vertices"]:
+        if vertex in apples["vertices"]:
+            new_apple = {
+                "x": random.randrange(0, world["width"]),
+                "y": random.randrange(0, world["height"]),
+            }
 
-            snake_data["number"] += 1
+            apples["vertices"].remove(vertex)
+            apples["vertices"].append(new_apple)
 
-            if snake_data["number"] > snake_data["high_score"]:
-                snake_data["high_score"] = snake_data["number"]
+            world["grid"][new_apple["y"]][new_apple["x"]] = "A"
 
-            new_vertice = [
-                snake_data["vertices"][0][0]
-                - (
-                    1
-                    if snake_data["direction"] == "RIGHT"
-                    else +1
-                    if snake_data["direction"] == "LEFT"
-                    else 0
-                ),
-                snake_data["vertices"][0][1]
-                - (
-                    1
-                    if snake_data["direction"] == "DOWN"
-                    else +1
-                    if snake_data["direction"] == "UP"
-                    else 0
-                ),
-            ]
+            snake["vertices"].append(
+                {
+                    "x": snake["vertices"][-1]["x"]
+                    - (
+                        1
+                        if snake["direction"] == "RIGHT"
+                        else -1
+                        if snake["direction"] == "LEFT"
+                        else 0
+                    ),
+                    "y": snake["vertices"][-1]["y"]
+                    - (
+                        1
+                        if snake["direction"] == "DOWN"
+                        else -1
+                        if snake["direction"] == "UP"
+                        else 0
+                    ),
+                }
+            )
 
-            if snake_data["vertices"].index([vertice[0], vertice[1]]) != 0:
-                snake_data["vertices"].insert(0, new_vertice)
-            else:
-                snake_data["vertices"].append(new_vertice)
+    for index, vertex in enumerate(snake["vertices"]):
+        world["grid"][vertex["y"]][vertex["x"]] = "H" if index == 0 else "S"
 
-            for _ in range(len(apple_data["vertices"]), apple_data["number"] + 1):
-                new_vertice = [
-                    random.randrange(0, world_width),
-                    random.randrange(0, world_height),
-                ]
+    print_world()
 
-                apple_data["vertices"].append(new_vertice)
-
-    for index, vertice in enumerate(snake_data["vertices"]):
-        world[vertice[1]][vertice[0]] = (
-            "@" if index == snake_data["number"] - 1 else "*"
-        )
-
-    for vertice in apple_data["vertices"]:
-        world[vertice[1]][vertice[0]] = "+"
-
-    snake_data["last_update"] = time.perf_counter()
-
-
-def trigger_world_update() -> typing.Optional[bool]:
-    global world_updating, world, old_world
-
-    if not world_updating:
-        world_updating = True
-        update_world()
-
-        if world != old_world:
-            print_world()
-
-            old_world = [row[:] for row in world]
-
-        world_updating = False
+    world["updating"] = False
+    world["last_update"] = time.perf_counter()
 
 
 def update_snake_direction(
@@ -193,25 +163,27 @@ def update_snake_direction(
     except AttributeError:
         char = key
 
-    last_direction = snake_data["direction"]
+    last_direction = snake["direction"]
 
     if char in ["w", pynput.keyboard.Key.up]:
-        snake_data["direction"] = "UP"
+        snake["direction"] = "UP"
     elif char in ["s", pynput.keyboard.Key.down]:
-        snake_data["direction"] = "DOWN"
+        snake["direction"] = "DOWN"
     elif char in ["a", pynput.keyboard.Key.left]:
-        snake_data["direction"] = "LEFT"
+        snake["direction"] = "LEFT"
     elif char in ["d", pynput.keyboard.Key.right]:
-        snake_data["direction"] = "RIGHT"
+        snake["direction"] = "RIGHT"
 
-    if last_direction != snake_data["direction"]:
-        snake_data["last_direction"] = last_direction
-        trigger_world_update()
+    if last_direction != snake["direction"]:
+        snake["last_direction"] = last_direction
+        update_world()
 
 
 pynput.keyboard.Listener(on_press=update_snake_direction).start()
-os.system("cls" if os.name == "nt" else "clear")
+os.system(
+    "cls" if os.name == "nt" else "clear"
+)  # Clear the terminal to get a clear screen to print the world to
 
 while True:
-    if time.perf_counter() - snake_data["last_update"] > 0.25:
-        trigger_world_update()
+    if time.perf_counter() - world["last_update"] > 0.25:
+        update_world()
