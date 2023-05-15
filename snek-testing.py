@@ -81,11 +81,11 @@ def update_world() -> None:
     world["updating"] = True
     last_vertex = None
 
-    for vertex in snake["vertices"]:
+    for index, vertex in enumerate(snake["vertices"]):
         world["grid"][vertex["y"]][vertex["x"]] = ""
 
-        if last_vertex:
-            vertex, last_vertex = last_vertex.copy(), vertex.copy()
+        if last_vertex is not None:
+            snake["vertices"][index], last_vertex = last_vertex, vertex.copy()
         else:
             last_vertex = vertex.copy()
 
@@ -145,10 +145,6 @@ def update_world() -> None:
                     ),
                 }
             )
-
-    f = open("test.txt", "a")
-    f.write(f'{len(snake["vertices"])}\n')
-    f.flush()
 
     for index, vertex in enumerate(snake["vertices"]):
         world["grid"][vertex["y"]][vertex["x"]] = "H" if index == 0 else "S"
