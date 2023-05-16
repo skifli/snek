@@ -153,8 +153,7 @@ def update_world() -> None:
                 }
 
                 apples["vertices"].append(new_apple)
-
-            world["grid"][new_apple["y"]][new_apple["x"]] = "A"
+                world["grid"][new_apple["y"]][new_apple["x"]] = "A"
 
             snake["score"] += 1
 
