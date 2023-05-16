@@ -110,14 +110,18 @@ def update_world() -> None:
                 or vertex["y"] < 0
                 or vertex["x"] >= world["width"]
                 or vertex["y"] >= world["height"]
-            ):
-                for vertex in apples["vertices"]:
+            ):  # Out of world
+                for vertex in apples[
+                    "vertices"
+                ]:  # Remove all previous apple vertices from the world
                     world["grid"][vertex["y"]][vertex["x"]] = ""
 
-                for vertex in snake["vertices"]:
+                for vertex in snake[
+                    "vertices"
+                ]:  # Remove all previous snake vertices from the world
                     world["grid"][vertex["y"]][vertex["x"]] = ""
 
-                snake["vertices"] = [{"x": 0, "y": 0}]
+                snake["vertices"] = [{"x": 0, "y": 0}]  # Reset snake
                 snake["score"] = 1
                 snake["direction"] = "RIGHT"
                 snake["last_direction"] = "RIGHT"
@@ -127,20 +131,20 @@ def update_world() -> None:
                         "x": random.randrange(0, world["width"]),
                         "y": random.randrange(0, world["height"]),
                     }
-                ]
+                ]  # Reset apples
 
                 world["grid"][snake["vertices"][0]["y"]][
                     snake["vertices"][0]["x"]
-                ] = "H"  # Add initial snake to grid
+                ] = "H"  # Add snake to grid
                 world["grid"][apples["vertices"][0]["y"]][
                     apples["vertices"][0]["x"]
-                ] = "A"  # Add initial apple to grid
+                ] = "A"  # Add apple to grid
 
                 break
 
     for vertex in snake["vertices"]:
         if vertex in apples["vertices"]:
-            apples["vertices"].remove(vertex)
+            apples["vertices"].remove(vertex)  # Remove *eaten* apple from the world.
 
             for _ in range(2):
                 new_apple = {
@@ -154,7 +158,7 @@ def update_world() -> None:
 
             snake["score"] += 1
 
-            if snake["score"] > snake["high_score"]:
+            if snake["score"] > snake["high_score"]:  # New high score
                 snake["high_score"] = snake["score"]
 
             snake["vertices"].append(
