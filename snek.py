@@ -133,12 +133,9 @@ def update_world() -> None:
                     }
                 ]  # Reset apples
 
-                world["grid"][snake["vertices"][0]["y"]][
-                    snake["vertices"][0]["x"]
-                ] = "H"  # Add snake to grid
                 world["grid"][apples["vertices"][0]["y"]][
                     apples["vertices"][0]["x"]
-                ] = "A"  # Add apple to grid
+                ] = "A"  # Add apple to grid (snake is added later in the function)
 
                 break
 
