@@ -124,6 +124,11 @@ def update_world() -> None:
             apples["vertices"].append(new_apple)
 
             world["grid"][new_apple["y"]][new_apple["x"]] = "A"
+            
+            snake["score"] += 1
+            
+            if snake["score"] > snake["high_score"]:
+                snake["high_score"] = snake["score"]
 
             snake["vertices"].append(
                 {
