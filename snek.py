@@ -7,7 +7,7 @@ terminal = os.get_terminal_size()
 CHARS: typing.Final[dict] = {"full_shade": "\u2588", "medium_shade": "\u2592"}
 
 world = {
-    "grid": None,
+    "grid": [],
     "height": terminal.lines - 4,
     "width": (terminal.columns // 2) - 2,
     "last_update": time.perf_counter(),
