@@ -111,7 +111,32 @@ def update_world() -> None:
                 or vertex["x"] >= world["width"]
                 or vertex["y"] >= world["height"]
             ):
-                exit()
+                for vertex in apples["vertices"]:
+                    world["grid"][vertex["y"]][vertex["x"]] = ""
+
+                for vertex in snake["vertices"]:
+                    world["grid"][vertex["y"]][vertex["x"]] = ""
+
+                snake["vertices"] = [{"x": 0, "y": 0}]
+                snake["score"] = 1
+                snake["direction"] = "RIGHT"
+                snake["last_direction"] = "RIGHT"
+
+                apples["vertices"] = [
+                    {
+                        "x": random.randrange(0, world["width"]),
+                        "y": random.randrange(0, world["height"]),
+                    }
+                ]
+
+                world["grid"][snake["vertices"][0]["y"]][
+                    snake["vertices"][0]["x"]
+                ] = "H"  # Add initial snake to grid
+                world["grid"][apples["vertices"][0]["y"]][
+                    apples["vertices"][0]["x"]
+                ] = "A"  # Add initial apple to grid
+
+                break
 
     for vertex in snake["vertices"]:
         if vertex in apples["vertices"]:
