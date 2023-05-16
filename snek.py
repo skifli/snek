@@ -115,19 +115,20 @@ def update_world() -> None:
 
     for vertex in snake["vertices"]:
         if vertex in apples["vertices"]:
+            apples["vertices"].remove(vertex)
+
             for _ in range(2):
                 new_apple = {
                     "x": random.randrange(0, world["width"]),
                     "y": random.randrange(0, world["height"]),
                 }
 
-                apples["vertices"].remove(vertex)
                 apples["vertices"].append(new_apple)
 
             world["grid"][new_apple["y"]][new_apple["x"]] = "A"
-            
+
             snake["score"] += 1
-            
+
             if snake["score"] > snake["high_score"]:
                 snake["high_score"] = snake["score"]
 
