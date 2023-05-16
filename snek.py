@@ -74,6 +74,41 @@ def print_world() -> None:
     print(f"\r{CHARS['full_shade']*terminal.columns}", end="")
 
 
+def restart_world() -> None:
+    world["updating"] = False
+    world["last_update"] = time.perf_counter()
+
+    for vertex in apples[
+        "vertices"
+    ]:  # Remove all previous apple vertices from the world
+        world["grid"][vertex["y"]][vertex["x"]] = ""
+
+    for vertex in snake[
+        "vertices"
+    ]:  # Remove all previous snake vertices from the world
+        world["grid"][vertex["y"]][vertex["x"]] = ""
+
+    snake["vertices"] = [{"x": -1, "y": 0}]  # Reset snake
+    snake["score"] = 1
+    snake["direction"] = "RIGHT"
+    snake["last_direction"] = "RIGHT"
+
+    apples["vertices"] = [
+        {
+            "x": random.randrange(0, world["width"]),
+            "y": random.randrange(0, world["height"]),
+        }
+    ]  # Reset apples
+
+    world["grid"][apples["vertices"][0]["y"]][
+        apples["vertices"][0]["x"]
+    ] = "A"  # Add apple to grid
+
+    world["grid"][snake["vertices"][0]["y"]][
+        snake["vertices"][0]["x"]
+    ] = "A"  # Add snake to grid
+
+
 def update_world() -> None:
     if world["updating"]:
         return
@@ -111,31 +146,7 @@ def update_world() -> None:
                 or vertex["x"] >= world["width"]
                 or vertex["y"] >= world["height"]
             ):  # Out of world
-                for vertex in apples[
-                    "vertices"
-                ]:  # Remove all previous apple vertices from the world
-                    world["grid"][vertex["y"]][vertex["x"]] = ""
-
-                for vertex in snake[
-                    "vertices"
-                ]:  # Remove all previous snake vertices from the world
-                    world["grid"][vertex["y"]][vertex["x"]] = ""
-
-                snake["vertices"] = [{"x": 0, "y": 0}]  # Reset snake
-                snake["score"] = 1
-                snake["direction"] = "RIGHT"
-                snake["last_direction"] = "RIGHT"
-
-                apples["vertices"] = [
-                    {
-                        "x": random.randrange(0, world["width"]),
-                        "y": random.randrange(0, world["height"]),
-                    }
-                ]  # Reset apples
-
-                world["grid"][apples["vertices"][0]["y"]][
-                    apples["vertices"][0]["x"]
-                ] = "A"  # Add apple to grid (snake is added later in the function)
+                restart_world()
 
                 break
 
@@ -184,6 +195,11 @@ def update_world() -> None:
         world["grid"][vertex["y"]][vertex["x"]] = (
             "H" if index == snake_length - 1 else "S"
         )
+
+        if index == snake_length - 1:
+            if vertex in snake["vertices"][1:]:
+                restart_world()
+                return update_world()
 
     print_world()
 
