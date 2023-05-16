@@ -178,8 +178,12 @@ def update_world() -> None:
                 }
             )
 
-    for index, vertex in enumerate(snake["vertices"]):
-        world["grid"][vertex["y"]][vertex["x"]] = "H" if index == 0 else "S"
+    snake_length = len(snake["vertices"])
+
+    for index, vertex in enumerate(snake["vertices"][::-1]):
+        world["grid"][vertex["y"]][vertex["x"]] = (
+            "H" if index == snake_length - 1 else "S"
+        )
 
     print_world()
 
