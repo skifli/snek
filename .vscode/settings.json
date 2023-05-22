@@ -10,6 +10,6 @@
      "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"
     },
-    "workbench.colorTheme": "One Dark Pro Darker",
+    "workbench.colorTheme": "Default Dark Modern",
     "workbench.iconTheme": "material-icon-theme",
 }
