@@ -1,12 +1,4 @@
 {
-    "[c]": {
-        "editor.defaultFormatter": "xaver.clang-format"
-    },
-    "C_Cpp.intelliSenseEngine": "disabled",
-    "cmake.preferredGenerators": [
-        "Ninja",
-        "Visual Studio 17 2022",
-    ],
     "editor.fontFamily": "Fira Code",
     "editor.fontLigatures": true,
     "editor.fontSize": 13,
@@ -15,12 +7,9 @@
     "git.enableSmartCommit": true,
     "git.confirmSync": false,
     "git.autofetch": true,
-    "redhat.telemetry.enabled": false,
-    "workbench.colorTheme": "One Dark Pro Darker",
-    "workbench.iconTheme": "material-icon-theme",
-    "esbonio.sphinx.confDir": "",
-    "[python]": {
+     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"
     },
-    "python.formatting.provider": "none",
+    "workbench.colorTheme": "One Dark Pro Darker",
+    "workbench.iconTheme": "material-icon-theme",
 }
