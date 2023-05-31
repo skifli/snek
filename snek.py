@@ -74,21 +74,27 @@ def print_world() -> None:
     print(f"\r{CHARS['full_shade']*terminal.columns}", end="")
 
 
-def restart_world() -> None:
+def vertex_in_world(vertex) -> bool:
+    return (vertex["x"] >= 0 and vertex["x"] < world["width"]) and (
+        vertex["y"] >= 0 and vertex["y"] < world["height"]
+    )
+
+
+def restart_world(full_reset: typing.Optional[bool] = True) -> None:
     world["updating"] = False
     world["last_update"] = time.perf_counter()
 
-    for vertex in apples[
-        "vertices"
-    ]:  # Remove all previous apple vertices from the world
-        world["grid"][vertex["y"]][vertex["x"]] = ""
+    for vertex in apples["vertices"]:
+        if vertex_in_world(vertex):
+            # Remove all previous apple vertices from the world
+            world["grid"][vertex["y"]][vertex["x"]] = ""
 
-    for vertex in snake[
-        "vertices"
-    ]:  # Remove all previous snake vertices from the world
-        world["grid"][vertex["y"]][vertex["x"]] = ""
+    for vertex in snake["vertices"]:
+        if vertex_in_world(vertex):
+            # Remove all previous snake vertices from the world
+            world["grid"][vertex["y"]][vertex["x"]] = ""
 
-    snake["vertices"] = [{"x": -1, "y": 0}]  # Reset snake
+    snake["vertices"] = [{"x": -1 if full_reset else 0, "y": 0}]  # Reset snake
     snake["score"] = 1
     snake["direction"] = "RIGHT"
     snake["last_direction"] = "RIGHT"
@@ -140,13 +146,8 @@ def update_world() -> None:
                 else 0
             )
 
-            if (
-                vertex["x"] < 0
-                or vertex["y"] < 0
-                or vertex["x"] >= world["width"]
-                or vertex["y"] >= world["height"]
-            ):  # Out of world
-                restart_world()
+            if not vertex_in_world(vertex):
+                restart_world(False)
 
                 break
 
