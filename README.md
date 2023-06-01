@@ -6,6 +6,7 @@
   - [Installation](#installation)
     - [Running from source](#running-from-source)
   - [Usage](#usage)
+  - [Known Bugs](#known-bugs)
   - [Star History](#star-history)
 
 ![Cover](assets/cover.png)
@@ -28,6 +29,10 @@ The world width and height is automatically set to the maximum it can be for the
 ## Usage
 
 * Run the command `python snek.py` in the root of your clone of this repository.
+
+## Known Bugs
+
+Please see [**`bugs.md`**](bugs.md).
 
 ## Star History
 
