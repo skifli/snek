@@ -7,7 +7,6 @@
     - [Running from source](#running-from-source)
   - [Usage](#usage)
   - [Known Bugs](#known-bugs)
-  - [Star History](#star-history)
 
 ![Cover](assets/cover.png)
 
@@ -33,13 +32,3 @@ The world width and height is automatically set to the maximum it can be for the
 ## Known Bugs
 
 Please see [**`bugs.md`**](bugs.md).
-
-## Star History
-
-<a href="https://star-history.com/#skifli/snek&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=skifli/snek&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=skifli/snek&type=Date" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=skifli/snek&type=Date" />
-  </picture>
-</a>
