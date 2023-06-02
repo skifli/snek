@@ -69,7 +69,7 @@ def print_world() -> None:
             ),
             end="",
         )
-        print(f"{CHARS['full_shade']*2}")
+        print(f"{CHARS['full_shade']*(2 if terminal.columns % 2 == 0 else 3)}")
 
     print(f"\r{CHARS['full_shade']*terminal.columns}", end="")
 
