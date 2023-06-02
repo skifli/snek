@@ -4,11 +4,13 @@
   - [*Bug No.1* - Width is one too little on odd sized column terminals.](#bug-no1---width-is-one-too-little-on-odd-sized-column-terminals)
   - [*Bug No.2* - Game bugs out when hitting the right hand top wall.](#bug-no2---game-bugs-out-when-hitting-the-right-hand-top-wall)
 
-
-
 ## *Bug No.1* - Width is one too little on odd sized column terminals.
 
-* **Status:** *In Progress*.
+* **Status:** *Fixed*.
+* **Fixed In:** *[e1a9fb1](https://github.com/skifli/snek/commit/e1a9fb1f93ef2cd946c9ba507b204f1b7f146c3a)*.
+* **Bug Explanation:** As thought, on odd sized column terminals there is a gap of one char on the right since each block in the world is made up of *two* of either **`\u2588`** or **`\u2592`**, since two makes a more square like shape (*█* vs *██*).
+* **Fix:** On odd sized terminals add *one* extra **`\u2588`** at the end of the line.
+* **Notes:** This only effected the end of the lines on which the world was drawn, since the lines containing the scores etc already had the fix for this bug implemented.
 
 ## *Bug No.2* - Game bugs out when hitting the right hand top wall.
 
