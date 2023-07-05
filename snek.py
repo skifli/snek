@@ -158,7 +158,7 @@ def update_world() -> None:
             for _ in range(2):
                 new_apple = {
                     "x": random.randrange(0, world["width"]),
-                    "y": random.randrange(0, world["height"]),
+                    "y": world["height"] - 2,
                 }
 
                 apples["vertices"].append(new_apple)
@@ -169,26 +169,7 @@ def update_world() -> None:
             if snake["score"] > snake["high_score"]:  # New high score
                 snake["high_score"] = snake["score"]
 
-            snake["vertices"].append(
-                {
-                    "x": snake["vertices"][-1]["x"]
-                    - (
-                        1
-                        if snake["direction"] == "RIGHT"
-                        else -1
-                        if snake["direction"] == "LEFT"
-                        else 0
-                    ),
-                    "y": snake["vertices"][-1]["y"]
-                    - (
-                        1
-                        if snake["direction"] == "DOWN"
-                        else -1
-                        if snake["direction"] == "UP"
-                        else 0
-                    ),
-                }
-            )
+            snake["vertices"].append(last_vertex)
 
     snake_length = len(snake["vertices"])
 
