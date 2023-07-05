@@ -158,7 +158,7 @@ def update_world() -> None:
             for _ in range(2):
                 new_apple = {
                     "x": random.randrange(0, world["width"]),
-                    "y": world["height"] - 2,
+                    "y": random.randrange(0, world["height"]),
                 }
 
                 apples["vertices"].append(new_apple)

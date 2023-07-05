@@ -24,7 +24,7 @@
 ## *Bug No.3* - List index out of range when moving up from bottm wall and eating apple.
 
 * **Status:** *Fixed*.
-* **Fixed In:** *[](https://github.com/skifli/snek/commit/)*.
+* **Fixed In:** *[4913472](https://github.com/skifli/snek/commit/4913472de1045641c3bcbb3c170aca3baecf1b88)*.
 * **Bug Explanation:** When the snake eats an apple it grows by one. The previous implementation added the new body part based on the current direction, but since the current direction is **`UP`**, and the snake is at the bottom of the world, the new body part is added out of bounds. This results in an **`IndexOutOfRange`** error.
 * **Fix:** Use the last vertex in the snake's previous position already stored in the *`last_vertex`* variable as the vertex at which to add the snake's next body part.
 * **Notes:** N/A.
