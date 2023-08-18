@@ -1,0 +1,37 @@
+{
+    "image": "mcr.microsoft.com/devcontainers/universal:2",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                // Update `../.vscode/extensions.json` as well.
+                "albert.tabout",
+                "alexanderte.dainty-one-dark-pro-vscode",
+                "christian-kohler.path-intellisense",
+                "donjayamanne.githistory",
+                "gruntfuggly.todo-tree",
+                "kevinrose.vsc-python-indent",
+                "mhutchie.git-graph",
+                "ms-python.black-formatter",
+                "ms-python.pylint",
+                "ms-python.python",
+                "pkief.material-icon-theme",
+                "redhat.vscode-yaml",
+                "trond-snekvik.simple-rst"
+            ]
+        }
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/desktop-lite:1": {
+            "password": "clangIsBetterThanGCC"
+        }
+    },
+    "forwardPorts": [
+        6080
+    ],
+    "portsAttributes": {
+        "6080": {
+            "label": "desktop"
+        }
+    },
+    "onCreateCommand": "pip install -r requirements.txt"
+}
