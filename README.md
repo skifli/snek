@@ -16,7 +16,8 @@ The world width and height is automatically set to the maximum it can be for the
 
 ## Installation
 
-> **Note** Please make sure you have support for Unicode fonts enabled in your system's settings. If you don't, the game will not look as it should.
+> [!NOTE]\
+> Please make sure you have support for Unicode fonts enabled in your system's settings. If you don't, the game will not look as it should.
 
 ### Running from source
 
