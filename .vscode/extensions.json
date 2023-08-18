@@ -1,5 +1,6 @@
 {
     "recommendations": [
+        // Update `../.devcontainer/devcontainer.json` as well.
         "albert.tabout",
         "alexanderte.dainty-one-dark-pro-vscode",
         "christian-kohler.path-intellisense",
@@ -8,9 +9,13 @@
         "kevinrose.vsc-python-indent",
         "mhutchie.git-graph",
         "ms-python.black-formatter",
+        "ms-python.pylint",
         "ms-python.python",
         "pkief.material-icon-theme",
         "redhat.vscode-yaml",
         "trond-snekvik.simple-rst",
     ],
+    "unwantedRecommendations": [
+        "ms-vscode-remote.remote-containers",
+    ]
 }
