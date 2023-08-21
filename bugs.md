@@ -3,7 +3,7 @@
 - [Bugs](#bugs)
   - [*Bug No.1* - Width is one too little on odd sized column terminals.](#bug-no1---width-is-one-too-little-on-odd-sized-column-terminals)
   - [*Bug No.2* - Game bugs out when hitting the right hand top wall.](#bug-no2---game-bugs-out-when-hitting-the-right-hand-top-wall)
-  - [*Bug No.3* - List index out of range when moving up from bottm wall and eating apple.](#bug-no3---list-index-out-of-range-when-moving-up-from-bottm-wall-and-eating-apple)
+  - [*Bug No.3* - List index out of range when moving up from bottom wall and eating apple.](#bug-no3---list-index-out-of-range-when-moving-up-from-bottom-wall-and-eating-apple)
 
 ## *Bug No.1* - Width is one too little on odd sized column terminals.
 
@@ -21,7 +21,7 @@
 * **Fix:** I ended up introducing a function called *`vertex_in_world`* that would check if a given vertex is in the world. Then in the *`reset_world`* function I made program only remove the index from the grid if it is valid.
 * **Notes:** It turns out there was **another bug** which happens when the snake hits *any wall*. The index would be set to *`-1`* and so for **one frame the snake would be on the right-most vertex on the x axis** (because *`-1`* means goes to the end of the list). I fixed this by adding a flag to *`reset_world`* called **full_reset** because setting the index to *`-1`* **was correct for the other application of the function**. If *`full_reset`* is **`True`** then the index is set to *`-1`* since that is what it is set to when the program first starts, otherwise *`0`*.
 
-## *Bug No.3* - List index out of range when moving up from bottm wall and eating apple.
+## *Bug No.3* - List index out of range when moving up from bottom wall and eating apple.
 
 * **Status:** *Fixed*.
 * **Fixed In:** *[4913472](https://github.com/skifli/snek/commit/4913472de1045641c3bcbb3c170aca3baecf1b88)*.
