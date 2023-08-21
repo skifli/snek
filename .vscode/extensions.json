@@ -7,6 +7,7 @@
         "donjayamanne.githistory",
         "gruntfuggly.todo-tree",
         "kevinrose.vsc-python-indent",
+        "leonardssh.vscord",
         "mhutchie.git-graph",
         "ms-python.black-formatter",
         "ms-python.pylint",
@@ -14,6 +15,7 @@
         "pkief.material-icon-theme",
         "redhat.vscode-yaml",
         "trond-snekvik.simple-rst",
+        "yzhang.markdown-all-in-one",
     ],
     "unwantedRecommendations": [
         "ms-vscode-remote.remote-containers",
