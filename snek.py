@@ -42,16 +42,27 @@ world["grid"][apples["vertices"][0]["y"]][
     apples["vertices"][0]["x"]
 ] = "A"  # Add initial apple to grid
 
-
-def print_world() -> None:
-    SCORE_STRING: typing.Final[str] = f"Score: {snake['score']}"
-    HIGH_SCORE_STRING: typing.Final[str] = f"High Score: {snake['high_score']}"
-
+def clear_terminal() -> None:
+    os.system(
+        "cls" if os.name == "nt" else "clear"
+    )  # Clear the terminal to get a clear screen to print the world to
+    
+def move_cursor_to_top() -> None:
     print(f"\033[{terminal.lines}A\033[2K", end="")
+
+def print_world(print_score: bool=True) -> None:
+    move_cursor_to_top()
     print(f"\r{CHARS['full_shade']*terminal.columns}")
-    print(
-        f"{CHARS['full_shade']*2}{SCORE_STRING}{CHARS['full_shade']*2}{HIGH_SCORE_STRING}{(CHARS['full_shade'] * (terminal.columns - 4 - len(SCORE_STRING) - len(HIGH_SCORE_STRING)))}"
-    )
+    
+    if print_score:
+        SCORE_STRING: typing.Final[str] = f"Score: {snake['score']}"
+        HIGH_SCORE_STRING: typing.Final[str] = f"High Score: {snake['high_score']}"
+        print(
+            f"{CHARS['full_shade']*2}{SCORE_STRING}{CHARS['full_shade']*2}{HIGH_SCORE_STRING}{(CHARS['full_shade'] * (terminal.columns - 4 - len(SCORE_STRING) - len(HIGH_SCORE_STRING)))}"
+        )
+    else:
+        print(f"\r{CHARS['full_shade']*terminal.columns}")      
+        
     print(f"\r{CHARS['full_shade']*terminal.columns}")
 
     for row in world["grid"]:
@@ -212,12 +223,12 @@ def update_snake_direction(
         snake["last_direction"] = last_direction
         update_world()
 
+def start_game() -> None:
+    pynput.keyboard.Listener(on_press=update_snake_direction).start()
+    clear_terminal()
 
-pynput.keyboard.Listener(on_press=update_snake_direction).start()
-os.system(
-    "cls" if os.name == "nt" else "clear"
-)  # Clear the terminal to get a clear screen to print the world to
+    while True:
+        if time.perf_counter() - world["last_update"] > 0.25:
+            update_world()
 
-while True:
-    if time.perf_counter() - world["last_update"] > 0.25:
-        update_world()
+start_game()
