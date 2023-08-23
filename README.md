@@ -21,7 +21,7 @@ The world width and height is automatically set to the maximum it can be for the
 
 ### Running from source
 
-* Make sure you have [Python](https://python.org) installed and is in your system environment variables as **`python`**. If you do not have go installed, you can install it from [here](https://python.org/download/).
+* Make sure you have [Python](https://python.org) installed and is in your system environment variables as **`python`**. If you do not have Python installed, you can install it from [here](https://python.org/download/).
 * Download and extract the repository from [here](https://github.com/skifli/snek/archive/refs/heads/master.zip). Alternatively, you can clone the repository with [Git](https://git-scm.com/) by running `git clone https://github.com/skifli/snek` in a terminal.
 * Navigate into the root directory of your clone of this repository.
 * Run the command `python -m pip install -r requirements.txt`.
