@@ -1,5 +1,5 @@
 {
-    "image": "mcr.microsoft.com/devcontainers/universal:2",
+    "image": "mcr.microsoft.com/devcontainers/cpp",
     "customizations": {
         "vscode": {
             "extensions": [
@@ -41,5 +41,6 @@
         "6080": {
             "label": "desktop"
         }
-    }
+    },
+    "postStartCommand": "sudo apt update && sudo apt install clang-format -y"
 }
