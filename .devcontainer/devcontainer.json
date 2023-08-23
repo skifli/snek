@@ -6,18 +6,25 @@
                 // Update `../.vscode/extensions.json` as well.
                 "albert.tabout",
                 "alexanderte.dainty-one-dark-pro-vscode",
-                "christian-kohler.path-intellisense",
                 "donjayamanne.githistory",
+                "github.copilot",
+                "github.copilot-chat",
+                "github.copilot-labs",
                 "gruntfuggly.todo-tree",
-                "kevinrose.vsc-python-indent",
                 "leonardssh.vscord",
+                "lextudio.restructuredtext",
+                "llvm-vs-code-extensions.vscode-clangd",
                 "mhutchie.git-graph",
-                "ms-python.black-formatter",
-                "ms-python.pylint",
-                "ms-python.python",
+                "ms-vscode.cmake-tools",
+                "lextudio.restructuredtext",
                 "pkief.material-icon-theme",
                 "redhat.vscode-yaml",
+                "revng.llvm-ir",
                 "trond-snekvik.simple-rst",
+                "twxs.cmake",
+                "vadimcn.vscode-lldb",
+                "wakatime.vscode-wakatime",
+                "xaver.clang-format",
                 "yzhang.markdown-all-in-one",
             ]
         }
@@ -34,6 +41,5 @@
         "6080": {
             "label": "desktop"
         }
-    },
-    "onCreateCommand": "pip install -r requirements.txt"
+    }
 }
