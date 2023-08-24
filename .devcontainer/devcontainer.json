@@ -42,5 +42,6 @@
             "label": "desktop"
         }
     },
+    "onCreateCommand": "git submodule update --init --recursive",
     "postStartCommand": "sudo apt update && sudo apt install clang-format -y"
 }
