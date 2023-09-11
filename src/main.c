@@ -11,20 +11,14 @@
 static char *chars[2] = {"\u2588", "\u2592"};
 static int terminal_height, terminal_width;
 
-void clearTerminal(void) {
-    system(OS == 1 ? "cls" : "clear");
-}
+void clearTerminal(void) { system(OS == 1 ? "cls" : "clear"); }
 
-void moveCursorToTop(void) {
-    printf("\033[%dA\033[2K", terminal_height);
-}
+void moveCursorToTop(void) { printf("\033[%dA\033[2K", terminal_height); }
 
-void startGame(void) {
-    clearTerminal();
-}
+void startGame(void) { clearTerminal(); }
 
 int main(void) {
-    startGame();
+	startGame();
 
-    return 0;
+	return 0;
 }
