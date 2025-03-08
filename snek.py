@@ -31,15 +31,6 @@ SNAKE_GROWTH_RATE = 1  # Number of segments added when eating an apple
 SNAKE_MOVE_DELAY = 0.25  # Delay between snake movements (in seconds)
 APPLE_SPACING = 3  # Minimum distance between apples and snake/other apples
 
-# Configurable variables (can be changed programmatically)
-config = {
-    "apple_density": APPLE_DENSITY,
-    "initial_snake_length": INITIAL_SNAKE_LENGTH,
-    "snake_growth_rate": SNAKE_GROWTH_RATE,
-    "snake_move_delay": SNAKE_MOVE_DELAY,
-    "apple_spacing": APPLE_SPACING,
-}
-
 
 class Snake:
     def __init__(self, world: "GameWorld") -> None:
@@ -55,7 +46,7 @@ class Snake:
         # Initialize the snake with the correct length
         start_x = self.world.width // 2
         start_y = self.world.height // 2
-        for i in range(config["initial_snake_length"]):
+        for i in range(self.world.config["initial_snake_length"]):
             self.vertices.append({"x": start_x - i, "y": start_y})
 
     def reset(self) -> None:
@@ -69,7 +60,7 @@ class Snake:
         # Initialize the snake with the correct length
         start_x = self.world.width // 2
         start_y = self.world.height // 2
-        for i in range(config["initial_snake_length"]):
+        for i in range(self.world.config["initial_snake_length"]):
             self.vertices.append({"x": start_x - i, "y": start_y})
 
     def update_direction(self, char: Optional[str]) -> bool:
@@ -103,7 +94,9 @@ class Apples:
     def calculate_initial_apples(self) -> None:
         """Calculate the initial number of apples based on the grid area."""
         grid_area = self.world.width * self.world.height
-        self.num_apples = max(MIN_APPLES, grid_area // config["apple_density"])
+        self.num_apples = max(
+            MIN_APPLES, grid_area // self.world.config["apple_density"]
+        )
         self.reset()
 
     def reset(self) -> None:
@@ -135,15 +128,16 @@ class Apples:
         """Check if the position is valid for placing an apple."""
         for vertex in self.world.snake.vertices:
             if (
-                abs(vertex["x"] - position["x"]) < config["apple_spacing"]
-                and abs(vertex["y"] - position["y"]) < config["apple_spacing"]
+                abs(vertex["x"] - position["x"]) < self.world.config["apple_spacing"]
+                and abs(vertex["y"] - position["y"])
+                < self.world.config["apple_spacing"]
             ):
                 return False
 
         for apple in self.vertices:
             if (
-                abs(apple["x"] - position["x"]) < config["apple_spacing"]
-                and abs(apple["y"] - position["y"]) < config["apple_spacing"]
+                abs(apple["x"] - position["x"]) < self.world.config["apple_spacing"]
+                and abs(apple["y"] - position["y"]) < self.world.config["apple_spacing"]
             ):
                 return False
 
@@ -151,8 +145,9 @@ class Apples:
 
 
 class GameWorld:
-    def __init__(self) -> None:
+    def __init__(self, config: Dict[str, int]) -> None:
         """Initialize the GameWorld object."""
+        self.config = config
         self.terminal = os.get_terminal_size()
         self.height = self.terminal.lines - GRID_HEIGHT_OFFSET
         self.width = (self.terminal.columns // CHAR_WIDTH) - GRID_WIDTH_OFFSET
@@ -173,10 +168,6 @@ class GameWorld:
     def initialize_grid(self) -> None:
         """Initialize the grid with empty values."""
         self.grid = [["" for _ in range(self.width)] for _ in range(self.height)]
-
-    def clear_terminal(self) -> None:
-        """Clear the terminal screen."""
-        os.system("cls" if os.name == "nt" else "clear")
 
     def move_cursor_to_top(self) -> None:
         """Move the cursor to the top of the terminal."""
@@ -286,13 +277,13 @@ class GameWorld:
         for vertex in self.snake.vertices:
             if vertex in self.apples.vertices:
                 self.apples.vertices.remove(vertex)
-                self.snake.score += config["snake_growth_rate"]
+                self.snake.score += self.config["snake_growth_rate"]
 
                 if self.snake.score > self.snake.high_score:
                     self.snake.high_score = self.snake.score
 
                 # Add new vertices to the growth queue
-                for _ in range(config["snake_growth_rate"]):
+                for _ in range(self.config["snake_growth_rate"]):
                     self.snake.growth_queue.append(last_vertex.copy())
 
                 self.apples.add_apple()
@@ -334,34 +325,177 @@ class GameWorld:
 
     def start_game(self) -> None:
         """Start the game loop."""
-        self.clear_terminal()
+        clear_terminal()
 
         while True:
-            if time.perf_counter() - self.last_update > config["snake_move_delay"]:
+            if time.perf_counter() - self.last_update > self.config["snake_move_delay"]:
                 self.update_world()
 
             char = getchar()
+
             if char:  # If a key is pressed
+                if char == "\x1b":  # If the key is the escape key
+                    break
                 if self.snake.update_direction(char):  # Update snake direction
                     self.update_world()  # Immediately update the world if direction changes
+
+
+def clear_terminal() -> None:
+    """Clear the terminal screen."""
+    os.system("cls" if os.name == "nt" else "clear")
 
 
 def getchar() -> Optional[str]:
     """Get a single character from standard input."""
     if select.select([sys.stdin], [], [], 0.0)[0]:
         return sys.stdin.read(1)
+
     return None
 
 
+def display_menu(config: Dict[str, int]) -> Dict[str, int]:
+    """Display the configuration menu and handle user input."""
+
+    while True:
+        clear_terminal()
+
+        width = os.get_terminal_size().columns
+        horizontal_line = "═" * (width - 2)
+
+        print(f"╔{horizontal_line}╗", end="\r\n")
+        print(f"║{'Snek Configuration Menu'.center(width - 2)}║", end="\r\n")
+        print(f"╠{horizontal_line}╣", end="\r\n")
+
+        # Helper function to format each menu option correctly
+        def format_option(text):
+            return f"║ {text}".ljust(width - 1) + "║"
+
+        print(
+            format_option(
+                f"1: Apple Density        (current: {config['apple_density']})"
+            ),
+            end="\r\n",
+        )
+        print(
+            format_option(
+                f"2: Initial Snake Length (current: {config['initial_snake_length']})"
+            ),
+            end="\r\n",
+        )
+        print(
+            format_option(
+                f"3: Snake Growth Rate    (current: {config['snake_growth_rate']})"
+            ),
+            end="\r\n",
+        )
+        print(
+            format_option(
+                f"4: Snake Move Delay     (current: {config['snake_move_delay']})"
+            ),
+            end="\r\n",
+        )
+        print(
+            format_option(
+                f"5: Apple Spacing        (current: {config['apple_spacing']})"
+            ),
+            end="\r\n",
+        )
+
+        print(f"╠{horizontal_line}╣", end="\r\n")
+        print(format_option("Enter: Start Game"), end="\r\n")
+        print(format_option("Esc: Exit (available while in game)"), end="\r\n")
+        print(f"╚{horizontal_line}╝", end="\r\n")
+
+        while True:
+            choice = getchar()
+
+            if choice:
+                break
+
+        clear_terminal()
+
+        if choice == "1":
+            key = "apple_density"
+            prompt = "Enter new Apple Density: "
+            convert_func = int
+        elif choice == "2":
+            key = "initial_snake_length"
+            prompt = "Enter new Initial Snake Length: "
+            convert_func = int
+        elif choice == "3":
+            key = "snake_growth_rate"
+            prompt = "Enter new Snake Growth Rate: "
+            convert_func = int
+        elif choice == "4":
+            key = "snake_move_delay"
+            prompt = "Enter new Snake Move Delay: "
+            convert_func = float
+        elif choice == "5":
+            key = "apple_spacing"
+            prompt = "Enter new Apple Spacing: "
+            convert_func = int
+        elif choice == "\r":
+            break
+        elif choice == "\x1b":
+            sys.exit()
+        else:
+            print("Invalid choice. Please try again.")
+            continue
+
+        print(prompt, end="", flush=True)
+
+        value = ""
+
+        while True:
+            char = getchar()
+
+            if char is None:
+                continue
+            elif char in ("\r", "\n"):
+                break
+            elif char == "\x7f":
+                value = value[:-1]
+            elif char == "\x1b":
+                break
+            else:
+                value += char
+
+            print(char, end="", flush=True)
+
+        print()
+
+        if key:
+            try:
+                config[key] = convert_func(value)
+            except ValueError:
+                pass
+
+    return config
+
+
 def main() -> None:
+    # Configurable variables (can be changed programmatically)
+    config = {
+        "apple_density": APPLE_DENSITY,
+        "initial_snake_length": INITIAL_SNAKE_LENGTH,
+        "snake_growth_rate": SNAKE_GROWTH_RATE,
+        "snake_move_delay": SNAKE_MOVE_DELAY,
+        "apple_spacing": APPLE_SPACING,
+    }
+
     """Main function to start the game."""
     fd = sys.stdin.fileno()
     attr = termios.tcgetattr(fd)
 
     tty.setraw(fd)
 
-    world = GameWorld()
-    world.start_game()
+    while True:
+        config = display_menu(
+            config
+        )  # Display the configuration menu before starting the game
+
+        world = GameWorld(config)
+        world.start_game()
 
     termios.tcsetattr(fd, termios.TCSANOW, attr)
 
