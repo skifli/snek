@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [3.0.0 (08/03/2025)](#300-08032025)
   - [2.1.2 (05/06/2023)](#212-05062023)
   - [2.1.1 (31/05/2023)](#211-31052023)
   - [2.1.0 (31/05/2023)](#210-31052023)
@@ -10,6 +11,14 @@
   - [1.0.2 (29/04/2023)](#102-29042023)
   - [1.0.1 (28/04/2023)](#101-28042023)
   - [1.0.0 (23/04/2023)](#100-23042023)
+
+## 3.0.0 (08/03/2025)
+
+* Add menu and configurations.
+* Add pride theme.
+* Add terminal resizing support.
+* Rewrite to OOP, with more documented code.
+* Rewrite to use custom keyboard input handling, to get rid of **`pynput`** dependency.
 
 ## 2.1.2 (05/06/2023)
 

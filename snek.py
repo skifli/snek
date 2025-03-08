@@ -1,3 +1,7 @@
+"""
+Snek. A simple snake game in the terminal.
+"""
+
 import os
 import random
 import sys
@@ -31,8 +35,55 @@ SNAKE_GROWTH_RATE = 1  # Number of segments added when eating an apple
 SNAKE_MOVE_DELAY = 0.25  # Delay between snake movements (in seconds)
 APPLE_SPACING = 3  # Minimum distance between apples and snake/other apples
 
+MENU_OPTIONS: List[Dict[str, str]] = [
+    {
+        "no": "1",
+        "name": "Apple Density",
+        "key": "apple_density",
+        "prompt": "Enter new Apple Density: ",
+        "convert_func": int,
+    },
+    {
+        "no": "2",
+        "name": "Initial Snake Length",
+        "key": "initial_snake_length",
+        "prompt": "Enter new Initial Snake Length: ",
+        "convert_func": int,
+    },
+    {
+        "no": "3",
+        "name": "Snake Growth Rate",
+        "key": "snake_growth_rate",
+        "prompt": "Enter new Snake Growth Rate: ",
+        "convert_func": int,
+    },
+    {
+        "no": "4",
+        "name": "Snake Move Delay",
+        "key": "snake_move_delay",
+        "prompt": "Enter new Snake Move Delay: ",
+        "convert_func": float,
+    },
+    {
+        "no": "5",
+        "name": "Apple Spacing",
+        "key": "apple_spacing",
+        "prompt": "Enter new Apple Spacing: ",
+        "convert_func": int,
+    },
+    {
+        "no": "6",
+        "name": "Pride Theme",
+        "key": "lgbtq_theme",
+        "prompt": "",
+        "convert_func": None,
+    },
+]
+
 
 class Snake:
+    """Class to represent the snake in the game."""
+
     def __init__(self, world: "GameWorld") -> None:
         """Initialize the Snake object."""
         self.world = world
@@ -85,6 +136,8 @@ class Snake:
 
 
 class Apples:
+    """Class to represent the apples in the game."""
+
     def __init__(self, world: "GameWorld") -> None:
         """Initialize the Apples object."""
         self.world = world
@@ -145,6 +198,8 @@ class Apples:
 
 
 class GameWorld:
+    """Class to represent the game world."""
+
     def __init__(self, config: Dict[str, int]) -> None:
         """Initialize the GameWorld object."""
         self.config = config
@@ -375,6 +430,11 @@ def clear_terminal() -> None:
     os.system("cls" if os.name == "nt" else "clear")
 
 
+def format_option(option: str, width: int) -> str:
+    """Format an option string for display."""
+    return f"║ {option}".ljust(width - 1) + "║"
+
+
 def getchar() -> Optional[str]:
     """Get a single character from standard input."""
     if select.select([sys.stdin], [], [], 0.0)[0]:
@@ -396,50 +456,19 @@ def display_menu(config: Dict[str, int], old_settings: List[int]) -> Dict[str, i
         print(f"║{'Snek Configuration Menu'.center(width - 2)}║", end="\r\n")
         print(f"╠{horizontal_line}╣", end="\r\n")
 
-        # Helper function to format each menu option correctly
-        def format_option(text):
-            return f"║ {text}".ljust(width - 1) + "║"
-
-        print(
-            format_option(
-                f"1: Apple Density        (current: {config['apple_density']})"
-            ),
-            end="\r\n",
-        )
-        print(
-            format_option(
-                f"2: Initial Snake Length (current: {config['initial_snake_length']})"
-            ),
-            end="\r\n",
-        )
-        print(
-            format_option(
-                f"3: Snake Growth Rate    (current: {config['snake_growth_rate']})"
-            ),
-            end="\r\n",
-        )
-        print(
-            format_option(
-                f"4: Snake Move Delay     (current: {config['snake_move_delay']})"
-            ),
-            end="\r\n",
-        )
-        print(
-            format_option(
-                f"5: Apple Spacing        (current: {config['apple_spacing']})"
-            ),
-            end="\r\n",
-        )
-        print(
-            format_option(
-                f"6: Pride Theme          (current: {config['lgbtq_theme']})"
-            ),
-            end="\r\n",
-        )
+        for option in MENU_OPTIONS:
+            current_value = config[option["key"]] if option["key"] in config else ""
+            print(
+                format_option(
+                    f"{option['no']}: {option['name']} (current: {current_value})",
+                    width,
+                ),
+                end="\r\n",
+            )
 
         print(f"╠{horizontal_line}╣", end="\r\n")
-        print(format_option("Enter: Start Game"), end="\r\n")
-        print(format_option("Esc: Exit (available while in game)"), end="\r\n")
+        print(format_option("Enter: Start Game", width), end="\r\n")
+        print(format_option("Esc: Exit (available while in game)", width), end="\r\n")
         print(f"╚{horizontal_line}╝", end="\r\n")
 
         while True:
@@ -450,68 +479,51 @@ def display_menu(config: Dict[str, int], old_settings: List[int]) -> Dict[str, i
 
         clear_terminal()
 
-        if choice == "1":
-            key = "apple_density"
-            prompt = "Enter new Apple Density: "
-            convert_func = int
-        elif choice == "2":
-            key = "initial_snake_length"
-            prompt = "Enter new Initial Snake Length: "
-            convert_func = int
-        elif choice == "3":
-            key = "snake_growth_rate"
-            prompt = "Enter new Snake Growth Rate: "
-            convert_func = int
-        elif choice == "4":
-            key = "snake_move_delay"
-            prompt = "Enter new Snake Move Delay: "
-            convert_func = float
-        elif choice == "5":
-            key = "apple_spacing"
-            prompt = "Enter new Apple Spacing: "
-            convert_func = int
-        elif choice == "6":
-            config["lgbtq_theme"] = not config["lgbtq_theme"]
+        selected_option = next(
+            (opt for opt in MENU_OPTIONS if opt["no"] == choice), None
+        )
 
-            continue
+        if selected_option:
+            if selected_option["key"] == "lgbtq_theme":
+                config["lgbtq_theme"] = not config["lgbtq_theme"]
+                continue
+
+            print(selected_option["prompt"], end="", flush=True)
+
+            value = ""
+
+            while True:
+                char = getchar()
+
+                if char is None:
+                    continue
+                elif char in ("\r", "\n"):
+                    break
+                elif char == "\x7f":
+                    value = value[:-1]
+                elif char == "\x1b":
+                    break
+                else:
+                    value += char
+
+                print(char, end="", flush=True)
+
+            print()
+
+            try:
+                config[selected_option["key"]] = selected_option["convert_func"](value)
+            except ValueError:
+                pass
+
         elif choice == "\r":
             break
         elif choice == "\x1b":
             fd = sys.stdin.fileno()
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-
             sys.exit()
         else:
             print("Invalid choice. Please try again.")
             continue
-
-        print(prompt, end="", flush=True)
-
-        value = ""
-
-        while True:
-            char = getchar()
-
-            if char is None:
-                continue
-            elif char in ("\r", "\n"):
-                break
-            elif char == "\x7f":
-                value = value[:-1]
-            elif char == "\x1b":
-                break
-            else:
-                value += char
-
-            print(char, end="", flush=True)
-
-        print()
-
-        if key:
-            try:
-                config[key] = convert_func(value)
-            except ValueError:
-                pass
 
     return config
 

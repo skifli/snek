@@ -8,11 +8,13 @@
   - [Usage](#usage)
   - [Known Bugs](#known-bugs)
 
-![Cover](assets/cover.png)
+![Image of the game's menu](assets/menu.png)
+![Image of playing the game in default mode](assets/game-pride-off.png)
+![Image of playing the game with pride mode on](assets/game-pride-on.png)
 
-It's snake. But *snek*. In **Python**. It supports all OSes that Python can run on, and was designed to look like a retro game from the early 80s. It runs entirely in your terminal, no GUI libraries required. It is written in just over 200 lines of code, and if you remove the fancy formatting while maintaining readability it would be around 150 lines of code.
+It's snake. But *snek*. In **Python**. It supports all OSes that Python can run on, and was designed to look like a retro game from the early 80s. It runs entirely in your terminal, no GUI libraries required, and uses minimal external dependencies (just `colorama`).
 
-The world width and height is automatically set to the maximum it can be for the size of terminal it is running in, so please don't make the terminal size smaller while playing. Currently the only ways to die are by hitting the world borders, or hitting the snake's body, in which case the score (but not high score), will reset.
+The world width and height is automatically set to the maximum it can be for the size of terminal it is running in, and supports recalibrating when the terminal is resized. Currently the only ways to die are by hitting the world borders, or hitting the snake's body, in which case the score (but not high score), will reset.
 
 ## Installation
 
