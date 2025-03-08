@@ -206,27 +206,31 @@ class GameWorld:
                     [
                         (
                             # Apples: Randomly colored trans blue or trans pink in Pride Theme
-                            random.choice(
-                                [
-                                    "\033[38;5;45m",  # Trans Blue
-                                    "\033[38;5;213m",  # Trans Pink
-                                ]
+                            (
+                                random.choice(
+                                    [
+                                        "\033[38;5;45m",  # Trans Blue
+                                        "\033[38;5;213m",  # Trans Pink
+                                    ]
+                                )
+                                + f"{CHARS['full_shade']*2}"
+                                + colorama.Fore.RESET
+                                if self.config["lgbtq_theme"]
+                                else f"{colorama.Fore.RED}{CHARS['full_shade']*2}{colorama.Fore.RESET}"  # Default theme
                             )
-                            + f"{CHARS['full_shade']*2}"
-                            + colorama.Fore.RESET
-                            if self.config["lgbtq_theme"] and entity == "A"
+                            if entity == "A"
                             else (
-                                f"{colorama.Fore.RED}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
-                                if entity == "A"  # Default apple color
+                                f"{self.rainbow_colors[(i // 2) % len(self.rainbow_colors)]}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
+                                if self.config["lgbtq_theme"]
+                                and entity in ["S", "H"]  # Snake body or head
                                 else (
-                                    f"{self.rainbow_colors[(i // 2) % len(self.rainbow_colors)]}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
-                                    if self.config["lgbtq_theme"]
-                                    and entity in ["S", "H"]  # Snake body or head
+                                    f"{colorama.Fore.GREEN}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
+                                    if entity == "H"  # Snake Head (if not rainbow)
                                     else (
-                                        f"{colorama.Fore.GREEN}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
-                                        if entity == "H"  # Snake Head (if not rainbow)
-                                        else CHARS["medium_shade"] * 2  # Empty space
-                                    )
+                                        f"{colorama.Fore.RED}{CHARS['full_shade']*2}{colorama.Fore.RESET}"  # Snake Body (if not rainbow)
+                                        if entity == "S"
+                                        else CHARS["medium_shade"] * 2
+                                    )  # Empty space
                                 )
                             )
                         )
