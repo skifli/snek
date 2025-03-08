@@ -1,260 +1,370 @@
-import colorama, os, random, sys, termios, time, tty, typing, select
+import os
+import random
+import sys
+import termios
+import time
+import tty
+from typing import List, Dict, Optional
+import select
+import signal
+
+import colorama
+
 
 colorama.init()
 
-terminal = os.get_terminal_size()
+# Constants
+CHARS = {"full_shade": "\u2588", "medium_shade": "\u2592"}
+CHAR_WIDTH = 2
+INITIAL_SNAKE_LENGTH = 1
+INITIAL_SCORE = 1
+INITIAL_HIGH_SCORE = 1
+GRID_HEIGHT_OFFSET = (
+    4  # Offset for the grid height (terminal.lines - GRID_HEIGHT_OFFSET)
+)
+GRID_WIDTH_OFFSET = (
+    2  # Offset for the grid width ((terminal.columns // 2) - GRID_WIDTH_OFFSET)
+)
+APPLE_DENSITY = 100  # Adjust for apple density (grid_area // APPLE_DENSITY)
+MIN_APPLES = 1  # Minimum number of apples
+SNAKE_GROWTH_RATE = 1  # Number of segments added when eating an apple
+SNAKE_MOVE_DELAY = 0.25  # Delay between snake movements (in seconds)
+APPLE_SPACING = 3  # Minimum distance between apples and snake/other apples
 
-CHARS: typing.Final[dict] = {"full_shade": "\u2588", "medium_shade": "\u2592"}
-
-world = {
-    "grid": [],
-    "height": terminal.lines - 4,
-    "width": (terminal.columns // 2) - 2,
-    "last_update": time.perf_counter(),
-    "updating": False,
+# Configurable variables (can be changed programmatically)
+config = {
+    "apple_density": APPLE_DENSITY,
+    "initial_snake_length": INITIAL_SNAKE_LENGTH,
+    "snake_growth_rate": SNAKE_GROWTH_RATE,
+    "snake_move_delay": SNAKE_MOVE_DELAY,
+    "apple_spacing": APPLE_SPACING,
 }
 
-snake = {
-    "vertices": [{"x": 0, "y": 0}],
-    "score": 1,
-    "high_score": 1,
-    "direction": "RIGHT",
-    "last_direction": "RIGHT",
-}
 
-apples = {
-    "vertices": [
-        {
-            "x": random.randrange(0, world["width"]),
-            "y": random.randrange(0, world["height"]),
-        }
-    ],
-}
+class Snake:
+    def __init__(self, world: "GameWorld") -> None:
+        """Initialize the Snake object."""
+        self.world = world
+        self.vertices: List[Dict[str, int]] = []
+        self.score = INITIAL_SCORE
+        self.high_score = INITIAL_HIGH_SCORE
+        self.direction = "RIGHT"
+        self.last_direction = "RIGHT"
+        self.growth_queue: List[Dict[str, int]] = []
 
-world["grid"] = [
-    ["" for _ in range(world["width"])] for _ in range(world["height"])
-]  # Create grid
+        # Initialize the snake with the correct length
+        start_x = self.world.width // 2
+        start_y = self.world.height // 2
+        for i in range(config["initial_snake_length"]):
+            self.vertices.append({"x": start_x - i, "y": start_y})
 
-world["grid"][snake["vertices"][0]["y"]][
-    snake["vertices"][0]["x"]
-] = "H"  # Add initial snake to grid
-world["grid"][apples["vertices"][0]["y"]][
-    apples["vertices"][0]["x"]
-] = "A"  # Add initial apple to grid
+    def reset(self) -> None:
+        """Reset the snake to its initial state."""
+        self.vertices = []
+        self.score = INITIAL_SCORE
+        self.direction = "RIGHT"
+        self.last_direction = "RIGHT"
+        self.growth_queue = []
 
+        # Initialize the snake with the correct length
+        start_x = self.world.width // 2
+        start_y = self.world.height // 2
+        for i in range(config["initial_snake_length"]):
+            self.vertices.append({"x": start_x - i, "y": start_y})
 
-def clear_terminal() -> None:
-    os.system(
-        "cls" if os.name == "nt" else "clear"
-    )  # Clear the terminal to get a clear screen to print the world to
+    def update_direction(self, char: Optional[str]) -> bool:
+        """Update the direction of the snake based on input character."""
+        if char is not None:
+            last_direction = self.direction
 
+            if char == "w" and last_direction != "DOWN":
+                self.direction = "UP"
+            elif char == "s" and last_direction != "UP":
+                self.direction = "DOWN"
+            elif char == "a" and last_direction != "RIGHT":
+                self.direction = "LEFT"
+            elif char == "d" and last_direction != "LEFT":
+                self.direction = "RIGHT"
 
-def move_cursor_to_top() -> None:
-    print(f"\033[{terminal.lines}A\033[2K", end="")
+            if last_direction != self.direction:
+                self.last_direction = last_direction
+                return True  # Direction changed
 
-
-def print_world(print_score: bool = True) -> None:
-    move_cursor_to_top()
-    print(f"\r{CHARS['full_shade']*terminal.columns}", end="\r\n")
-
-    if print_score:
-        SCORE_STRING: typing.Final[str] = f"Score: {snake['score']}"
-        HIGH_SCORE_STRING: typing.Final[str] = f"High Score: {snake['high_score']}"
-        print(
-            f"{CHARS['full_shade']*2}{SCORE_STRING}{CHARS['full_shade']*2}{HIGH_SCORE_STRING}{(CHARS['full_shade'] * (terminal.columns - 4 - len(SCORE_STRING) - len(HIGH_SCORE_STRING)))}",
-            end="\r\n",
-        )
-    else:
-        print(f"\r{CHARS['full_shade']*terminal.columns}", end="\r\n")
-
-    print(f"\r{CHARS['full_shade']*terminal.columns}", end="\r\n")
-
-    for row in world["grid"]:
-        print(f"{CHARS['full_shade']*2}", end="")
-        print(
-            "".join(
-                [
-                    (
-                        f"{colorama.Fore.RED}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
-                        if entity in ["A", "S"]  # Apple / Snake
-                        else (
-                            f"{colorama.Fore.GREEN}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
-                            if entity == "H"  # Snake Head
-                            else CHARS["medium_shade"] * 2
-                        )
-                    )
-                    for entity in row
-                ]
-            ),
-            end="",
-        )
-        print(
-            f"{CHARS['full_shade']*(2 if terminal.columns % 2 == 0 else 3)}", end="\r\n"
-        )
-
-    print(f"\r{CHARS['full_shade']*terminal.columns}", end="")
+        return False  # Direction unchanged
 
 
-def vertex_in_world(vertex) -> bool:
-    return (vertex["x"] >= 0 and vertex["x"] < world["width"]) and (
-        vertex["y"] >= 0 and vertex["y"] < world["height"]
-    )
+class Apples:
+    def __init__(self, world: "GameWorld") -> None:
+        """Initialize the Apples object."""
+        self.world = world
+        self.vertices: List[Dict[str, int]] = []
+        self.calculate_initial_apples()
 
+    def calculate_initial_apples(self) -> None:
+        """Calculate the initial number of apples based on the grid area."""
+        grid_area = self.world.width * self.world.height
+        self.num_apples = max(MIN_APPLES, grid_area // config["apple_density"])
+        self.reset()
 
-def restart_world(full_reset: typing.Optional[bool] = True) -> None:
-    world["updating"] = False
-    world["last_update"] = time.perf_counter()
+    def reset(self) -> None:
+        """Reset the apples to their initial state."""
+        self.vertices = []
+        for _ in range(self.num_apples):
+            self.add_apple()
 
-    for vertex in apples["vertices"]:
-        if vertex_in_world(vertex):
-            # Remove all previous apple vertices from the world
-            world["grid"][vertex["y"]][vertex["x"]] = ""
+    def add_apple(self) -> None:
+        """Add a new apple to the grid."""
+        attempts = 0
+        while attempts < 100:  # Limit attempts to avoid infinite loops
+            new_apple = {
+                "x": random.randrange(0, self.world.width),
+                "y": random.randrange(0, self.world.height),
+            }
 
-    for vertex in snake["vertices"]:
-        if vertex_in_world(vertex):
-            # Remove all previous snake vertices from the world
-            world["grid"][vertex["y"]][vertex["x"]] = ""
-
-    snake["vertices"] = [{"x": -1 if full_reset else 0, "y": 0}]  # Reset snake
-    snake["score"] = 1
-    snake["direction"] = "RIGHT"
-    snake["last_direction"] = "RIGHT"
-
-    apples["vertices"] = [
-        {
-            "x": random.randrange(0, world["width"]),
-            "y": random.randrange(0, world["height"]),
-        }
-    ]  # Reset apples
-
-    world["grid"][apples["vertices"][0]["y"]][
-        apples["vertices"][0]["x"]
-    ] = "A"  # Add apple to grid
-
-    world["grid"][snake["vertices"][0]["y"]][
-        snake["vertices"][0]["x"]
-    ] = "A"  # Add snake to grid
-
-
-def update_world() -> None:
-    if world["updating"]:
-        return
-
-    world["updating"] = True
-    last_vertex = None
-
-    for index, vertex in enumerate(snake["vertices"]):
-        world["grid"][vertex["y"]][vertex["x"]] = ""
-
-        if last_vertex is not None:
-            snake["vertices"][index], last_vertex = last_vertex, vertex.copy()
-        else:
-            last_vertex = vertex.copy()
-
-            vertex["x"] += (
-                1
-                if snake["direction"] == "RIGHT"
-                else -1 if snake["direction"] == "LEFT" else 0
-            )
-
-            vertex["y"] += (
-                1
-                if snake["direction"] == "DOWN"
-                else -1 if snake["direction"] == "UP" else 0
-            )
-
-            if not vertex_in_world(vertex):
-                restart_world(False)
-
+            if self.is_position_valid(new_apple):
+                self.vertices.append(new_apple)
+                if (
+                    0 <= new_apple["y"] < self.world.height
+                    and 0 <= new_apple["x"] < self.world.width
+                ):
+                    self.world.grid[new_apple["y"]][new_apple["x"]] = "A"
                 break
+            attempts += 1
 
-    for vertex in snake["vertices"]:
-        if vertex in apples["vertices"]:
-            apples["vertices"].remove(vertex)  # Remove *eaten* apple from the world.
+    def is_position_valid(self, position: Dict[str, int]) -> bool:
+        """Check if the position is valid for placing an apple."""
+        for vertex in self.world.snake.vertices:
+            if (
+                abs(vertex["x"] - position["x"]) < config["apple_spacing"]
+                and abs(vertex["y"] - position["y"]) < config["apple_spacing"]
+            ):
+                return False
 
-            for _ in range(2):
-                new_apple = {
-                    "x": random.randrange(0, world["width"]),
-                    "y": random.randrange(0, world["height"]),
-                }
+        for apple in self.vertices:
+            if (
+                abs(apple["x"] - position["x"]) < config["apple_spacing"]
+                and abs(apple["y"] - position["y"]) < config["apple_spacing"]
+            ):
+                return False
 
-                apples["vertices"].append(new_apple)
-                world["grid"][new_apple["y"]][new_apple["x"]] = "A"
+        return True
 
-            snake["score"] += 1
 
-            if snake["score"] > snake["high_score"]:  # New high score
-                snake["high_score"] = snake["score"]
+class GameWorld:
+    def __init__(self) -> None:
+        """Initialize the GameWorld object."""
+        self.terminal = os.get_terminal_size()
+        self.height = self.terminal.lines - GRID_HEIGHT_OFFSET
+        self.width = (self.terminal.columns // CHAR_WIDTH) - GRID_WIDTH_OFFSET
+        self.grid: List[List[str]] = []
+        self.last_update = time.perf_counter()
+        self.updating = False
 
-            snake["vertices"].append(last_vertex)
+        self.initialize_grid()
 
-    snake_length = len(snake["vertices"])
+        self.snake = Snake(self)
+        self.apples = Apples(self)
 
-    for index, vertex in enumerate(snake["vertices"][::-1]):
-        world["grid"][vertex["y"]][vertex["x"]] = (
-            "H" if index == snake_length - 1 else "S"
+        self.reset_world()
+
+        # Handle terminal resizing
+        signal.signal(signal.SIGWINCH, self.handle_resize)
+
+    def initialize_grid(self) -> None:
+        """Initialize the grid with empty values."""
+        self.grid = [["" for _ in range(self.width)] for _ in range(self.height)]
+
+    def clear_terminal(self) -> None:
+        """Clear the terminal screen."""
+        os.system("cls" if os.name == "nt" else "clear")
+
+    def move_cursor_to_top(self) -> None:
+        """Move the cursor to the top of the terminal."""
+        print(f"\033[{self.terminal.lines}A\033[2K", end="")
+
+    def print_world(self, print_score: bool = True) -> None:
+        """Print the current state of the game world."""
+        self.move_cursor_to_top()
+        print(f"\r{CHARS['full_shade']*self.terminal.columns}", end="\r\n")
+
+        if print_score:
+            score_string = f"Score: {self.snake.score}"
+            high_score_string = f"High Score: {self.snake.high_score}"
+            print(
+                f"{CHARS['full_shade']*CHAR_WIDTH}{score_string}{CHARS['full_shade']*CHAR_WIDTH}{high_score_string}{(CHARS['full_shade'] * (self.terminal.columns - GRID_HEIGHT_OFFSET - len(score_string) - len(high_score_string)))}",
+                end="\r\n",
+            )
+        else:
+            print(f"\r{CHARS['full_shade']*self.terminal.columns}", end="\r\n")
+
+        print(f"\r{CHARS['full_shade']*self.terminal.columns}", end="\r\n")
+
+        for row in self.grid:
+            print(f"{CHARS['full_shade']*CHAR_WIDTH}", end="")
+            print(
+                "".join(
+                    [
+                        (
+                            f"{colorama.Fore.RED}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
+                            if entity in ["A", "S"]  # Apple / Snake
+                            else (
+                                f"{colorama.Fore.GREEN}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
+                                if entity == "H"  # Snake Head
+                                else CHARS["medium_shade"] * 2
+                            )
+                        )
+                        for entity in row
+                    ]
+                ),
+                end="",
+            )
+            print(
+                f"{CHARS['full_shade']*(2 if self.terminal.columns % 2 == 0 else 3)}",
+                end="\r\n",
+            )
+
+        print(f"\r{CHARS['full_shade']*self.terminal.columns}", end="")
+
+    def vertex_in_world(self, vertex: Dict[str, int]) -> bool:
+        """Check if a vertex is within the bounds of the world."""
+        return (vertex["x"] >= 0 and vertex["x"] < self.width) and (
+            vertex["y"] >= 0 and vertex["y"] < self.height
         )
 
-        if index == snake_length - 1:
-            if vertex in snake["vertices"][1:]:
-                restart_world()
-                return update_world()
+    def reset_world(self) -> None:
+        """Reset the game world to its initial state."""
+        self.updating = False
+        self.last_update = time.perf_counter()
 
-    print_world()
+        # Clear the grid
+        self.initialize_grid()
 
-    world["updating"] = False
-    world["last_update"] = time.perf_counter()
+        # Reset the snake and apples
+        self.snake.reset()
+        self.apples.reset()
+
+        # Place the snake head on the grid
+        if (
+            0 <= self.snake.vertices[0]["y"] < self.height
+            and 0 <= self.snake.vertices[0]["x"] < self.width
+        ):
+            self.grid[self.snake.vertices[0]["y"]][self.snake.vertices[0]["x"]] = "H"
+
+    def update_world(self) -> None:
+        """Update the game world state."""
+        if self.updating:
+            return
+
+        self.updating = True
+        last_vertex = None
+
+        # Move the snake
+        for index, vertex in enumerate(self.snake.vertices):
+            if 0 <= vertex["y"] < self.height and 0 <= vertex["x"] < self.width:
+                self.grid[vertex["y"]][vertex["x"]] = ""
+
+            if last_vertex is not None:
+                self.snake.vertices[index], last_vertex = last_vertex, vertex.copy()
+            else:
+                last_vertex = vertex.copy()
+                vertex["x"] += (
+                    1
+                    if self.snake.direction == "RIGHT"
+                    else -1 if self.snake.direction == "LEFT" else 0
+                )
+                vertex["y"] += (
+                    1
+                    if self.snake.direction == "DOWN"
+                    else -1 if self.snake.direction == "UP" else 0
+                )
+
+                if not self.vertex_in_world(vertex):
+                    self.reset_world()
+                    break
+
+        # Check for apple collisions
+        for vertex in self.snake.vertices:
+            if vertex in self.apples.vertices:
+                self.apples.vertices.remove(vertex)
+                self.snake.score += config["snake_growth_rate"]
+
+                if self.snake.score > self.snake.high_score:
+                    self.snake.high_score = self.snake.score
+
+                # Add new vertices to the growth queue
+                for _ in range(config["snake_growth_rate"]):
+                    self.snake.growth_queue.append(last_vertex.copy())
+
+                self.apples.add_apple()
+
+        # Handle snake growth
+        while self.snake.growth_queue:
+            self.snake.vertices.append(self.snake.growth_queue.pop(0))
+
+        # Update the grid with the new snake positions
+        snake_length = len(self.snake.vertices)
+        for index, vertex in enumerate(self.snake.vertices[::-1]):
+            if 0 <= vertex["y"] < self.height and 0 <= vertex["x"] < self.width:
+                self.grid[vertex["y"]][vertex["x"]] = (
+                    "H" if index == snake_length - 1 else "S"
+                )
+
+            if index == snake_length - 1:
+                if vertex in self.snake.vertices[1:]:
+                    self.reset_world()
+                    return self.update_world()
+
+        self.print_world()
+
+        self.updating = False
+        self.last_update = time.perf_counter()
+
+    def handle_resize(self, _signum: int, _frame: Optional[object]) -> None:
+        """Handle terminal resize events."""
+        # Update terminal size and grid dimensions
+        self.terminal = os.get_terminal_size()
+        self.height = self.terminal.lines - GRID_HEIGHT_OFFSET
+        self.width = (self.terminal.columns // 2) - GRID_WIDTH_OFFSET
+
+        # Reinitialize the grid
+        self.initialize_grid()
+
+        # Reposition the snake and apples
+        self.reset_world()
+
+    def start_game(self) -> None:
+        """Start the game loop."""
+        self.clear_terminal()
+
+        while True:
+            if time.perf_counter() - self.last_update > config["snake_move_delay"]:
+                self.update_world()
+
+            char = getchar()
+            if char:  # If a key is pressed
+                if self.snake.update_direction(char):  # Update snake direction
+                    self.update_world()  # Immediately update the world if direction changes
 
 
-def getchar():
-    if select.select(
-        [
-            sys.stdin,
-        ],
-        [],
-        [],
-        0.0,
-    )[
-        0
-    ]:  # If there is a character to read
+def getchar() -> Optional[str]:
+    """Get a single character from standard input."""
+    if select.select([sys.stdin], [], [], 0.0)[0]:
         return sys.stdin.read(1)
+    return None
 
 
-def update_snake_direction() -> None:
-    char = getchar()
+def main() -> None:
+    """Main function to start the game."""
+    fd = sys.stdin.fileno()
+    attr = termios.tcgetattr(fd)
 
-    if char is not None:
-        last_direction = snake["direction"]
+    tty.setraw(fd)
 
-        if char == "w" and last_direction != "DOWN":
-            snake["direction"] = "UP"
-        elif char == "s" and last_direction != "UP":
-            snake["direction"] = "DOWN"
-        elif char == "a" and last_direction != "RIGHT":
-            snake["direction"] = "LEFT"
-        elif char == "d" and last_direction != "LEFT":
-            snake["direction"] = "RIGHT"
+    world = GameWorld()
+    world.start_game()
 
-        if last_direction != snake["direction"]:
-            snake["last_direction"] = last_direction
-            update_world()
+    termios.tcsetattr(fd, termios.TCSANOW, attr)
 
 
-def start_game() -> None:
-    clear_terminal()
-
-    while True:
-        if time.perf_counter() - world["last_update"] > 0.25:
-            update_world()
-
-        update_snake_direction()
-
-
-fd = sys.stdin.fileno()
-attr = termios.tcgetattr(fd)
-
-tty.setraw(fd)
-
-start_game()
-
-termios.tcsetattr(fd, termios.TCSANOW, attr)
+if __name__ == "__main__":
+    main()
