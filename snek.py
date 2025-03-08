@@ -155,6 +155,15 @@ class GameWorld:
         self.last_update = time.perf_counter()
         self.updating = False
 
+        self.rainbow_colors = [
+            "\033[38;5;196m",  # Red
+            "\033[38;5;214m",  # Orange
+            "\033[38;5;226m",  # Yellow
+            "\033[38;5;46m",  # Green
+            "\033[38;5;33m",  # Blue
+            "\033[38;5;129m",  # Purple
+        ]
+
         self.initialize_grid()
 
         self.snake = Snake(self)
@@ -196,15 +205,32 @@ class GameWorld:
                 "".join(
                     [
                         (
-                            f"{colorama.Fore.RED}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
-                            if entity in ["A", "S"]  # Apple / Snake
+                            # Apples: Randomly colored trans blue or trans pink in Pride Theme
+                            random.choice(
+                                [
+                                    "\033[38;5;45m",  # Trans Blue
+                                    "\033[38;5;213m",  # Trans Pink
+                                ]
+                            )
+                            + f"{CHARS['full_shade']*2}"
+                            + colorama.Fore.RESET
+                            if self.config["lgbtq_theme"] and entity == "A"
                             else (
-                                f"{colorama.Fore.GREEN}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
-                                if entity == "H"  # Snake Head
-                                else CHARS["medium_shade"] * 2
+                                f"{colorama.Fore.RED}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
+                                if entity == "A"  # Default apple color
+                                else (
+                                    f"{self.rainbow_colors[(i // 2) % len(self.rainbow_colors)]}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
+                                    if self.config["lgbtq_theme"]
+                                    and entity in ["S", "H"]  # Snake body or head
+                                    else (
+                                        f"{colorama.Fore.GREEN}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
+                                        if entity == "H"  # Snake Head (if not rainbow)
+                                        else CHARS["medium_shade"] * 2  # Empty space
+                                    )
+                                )
                             )
                         )
-                        for entity in row
+                        for i, entity in enumerate(row)
                     ]
                 ),
                 end="",
@@ -353,7 +379,7 @@ def getchar() -> Optional[str]:
     return None
 
 
-def display_menu(config: Dict[str, int]) -> Dict[str, int]:
+def display_menu(config: Dict[str, int], old_settings: List[int]) -> Dict[str, int]:
     """Display the configuration menu and handle user input."""
 
     while True:
@@ -400,6 +426,12 @@ def display_menu(config: Dict[str, int]) -> Dict[str, int]:
             ),
             end="\r\n",
         )
+        print(
+            format_option(
+                f"6: Pride Theme          (current: {config['lgbtq_theme']})"
+            ),
+            end="\r\n",
+        )
 
         print(f"╠{horizontal_line}╣", end="\r\n")
         print(format_option("Enter: Start Game"), end="\r\n")
@@ -434,9 +466,16 @@ def display_menu(config: Dict[str, int]) -> Dict[str, int]:
             key = "apple_spacing"
             prompt = "Enter new Apple Spacing: "
             convert_func = int
+        elif choice == "6":
+            config["lgbtq_theme"] = not config["lgbtq_theme"]
+
+            continue
         elif choice == "\r":
             break
         elif choice == "\x1b":
+            fd = sys.stdin.fileno()
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
             sys.exit()
         else:
             print("Invalid choice. Please try again.")
@@ -474,6 +513,8 @@ def display_menu(config: Dict[str, int]) -> Dict[str, int]:
 
 
 def main() -> None:
+    """Main function to start the game."""
+
     # Configurable variables (can be changed programmatically)
     config = {
         "apple_density": APPLE_DENSITY,
@@ -481,23 +522,22 @@ def main() -> None:
         "snake_growth_rate": SNAKE_GROWTH_RATE,
         "snake_move_delay": SNAKE_MOVE_DELAY,
         "apple_spacing": APPLE_SPACING,
+        "lgbtq_theme": False,
     }
 
-    """Main function to start the game."""
     fd = sys.stdin.fileno()
-    attr = termios.tcgetattr(fd)
+    old_settings = termios.tcgetattr(fd)
 
     tty.setraw(fd)
 
     while True:
         config = display_menu(
-            config
+            config,
+            old_settings,
         )  # Display the configuration menu before starting the game
 
         world = GameWorld(config)
         world.start_game()
-
-    termios.tcsetattr(fd, termios.TCSANOW, attr)
 
 
 if __name__ == "__main__":
