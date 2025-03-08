@@ -1,4 +1,4 @@
-import colorama, os, pynput, random, time, typing
+import colorama, os, random, sys, termios, time, tty, typing, select
 
 colorama.init()
 
@@ -42,45 +42,55 @@ world["grid"][apples["vertices"][0]["y"]][
     apples["vertices"][0]["x"]
 ] = "A"  # Add initial apple to grid
 
+
 def clear_terminal() -> None:
     os.system(
         "cls" if os.name == "nt" else "clear"
     )  # Clear the terminal to get a clear screen to print the world to
-    
+
+
 def move_cursor_to_top() -> None:
     print(f"\033[{terminal.lines}A\033[2K", end="")
 
-def print_world(print_score: bool=True) -> None:
+
+def print_world(print_score: bool = True) -> None:
     move_cursor_to_top()
-    print(f"\r{CHARS['full_shade']*terminal.columns}")
-    
+    print(f"\r{CHARS['full_shade']*terminal.columns}", end="\r\n")
+
     if print_score:
         SCORE_STRING: typing.Final[str] = f"Score: {snake['score']}"
         HIGH_SCORE_STRING: typing.Final[str] = f"High Score: {snake['high_score']}"
         print(
-            f"{CHARS['full_shade']*2}{SCORE_STRING}{CHARS['full_shade']*2}{HIGH_SCORE_STRING}{(CHARS['full_shade'] * (terminal.columns - 4 - len(SCORE_STRING) - len(HIGH_SCORE_STRING)))}"
+            f"{CHARS['full_shade']*2}{SCORE_STRING}{CHARS['full_shade']*2}{HIGH_SCORE_STRING}{(CHARS['full_shade'] * (terminal.columns - 4 - len(SCORE_STRING) - len(HIGH_SCORE_STRING)))}",
+            end="\r\n",
         )
     else:
-        print(f"\r{CHARS['full_shade']*terminal.columns}")      
-        
-    print(f"\r{CHARS['full_shade']*terminal.columns}")
+        print(f"\r{CHARS['full_shade']*terminal.columns}", end="\r\n")
+
+    print(f"\r{CHARS['full_shade']*terminal.columns}", end="\r\n")
 
     for row in world["grid"]:
         print(f"{CHARS['full_shade']*2}", end="")
         print(
             "".join(
                 [
-                    f"{colorama.Fore.RED}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
-                    if entity in ["A", "S"]  # Apple / Snake
-                    else f"{colorama.Fore.GREEN}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
-                    if entity == "H"  # Snake Head
-                    else CHARS["medium_shade"] * 2
+                    (
+                        f"{colorama.Fore.RED}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
+                        if entity in ["A", "S"]  # Apple / Snake
+                        else (
+                            f"{colorama.Fore.GREEN}{CHARS['full_shade']*2}{colorama.Fore.RESET}"
+                            if entity == "H"  # Snake Head
+                            else CHARS["medium_shade"] * 2
+                        )
+                    )
                     for entity in row
                 ]
             ),
             end="",
         )
-        print(f"{CHARS['full_shade']*(2 if terminal.columns % 2 == 0 else 3)}")
+        print(
+            f"{CHARS['full_shade']*(2 if terminal.columns % 2 == 0 else 3)}", end="\r\n"
+        )
 
     print(f"\r{CHARS['full_shade']*terminal.columns}", end="")
 
@@ -144,17 +154,13 @@ def update_world() -> None:
             vertex["x"] += (
                 1
                 if snake["direction"] == "RIGHT"
-                else -1
-                if snake["direction"] == "LEFT"
-                else 0
+                else -1 if snake["direction"] == "LEFT" else 0
             )
 
             vertex["y"] += (
                 1
                 if snake["direction"] == "DOWN"
-                else -1
-                if snake["direction"] == "UP"
-                else 0
+                else -1 if snake["direction"] == "UP" else 0
             )
 
             if not vertex_in_world(vertex):
@@ -200,35 +206,55 @@ def update_world() -> None:
     world["last_update"] = time.perf_counter()
 
 
-def update_snake_direction(
-    key: typing.Union[pynput.keyboard.Key, pynput.keyboard.KeyCode]
-) -> None:
-    try:
-        char = key.char
-    except AttributeError:
-        char = key
+def getchar():
+    if select.select(
+        [
+            sys.stdin,
+        ],
+        [],
+        [],
+        0.0,
+    )[
+        0
+    ]:  # If there is a character to read
+        return sys.stdin.read(1)
 
-    last_direction = snake["direction"]
 
-    if char in ["w", pynput.keyboard.Key.up]:
-        snake["direction"] = "UP"
-    elif char in ["s", pynput.keyboard.Key.down]:
-        snake["direction"] = "DOWN"
-    elif char in ["a", pynput.keyboard.Key.left]:
-        snake["direction"] = "LEFT"
-    elif char in ["d", pynput.keyboard.Key.right]:
-        snake["direction"] = "RIGHT"
+def update_snake_direction() -> None:
+    char = getchar()
 
-    if last_direction != snake["direction"]:
-        snake["last_direction"] = last_direction
-        update_world()
+    if char is not None:
+        last_direction = snake["direction"]
+
+        if char == "w" and last_direction != "DOWN":
+            snake["direction"] = "UP"
+        elif char == "s" and last_direction != "UP":
+            snake["direction"] = "DOWN"
+        elif char == "a" and last_direction != "RIGHT":
+            snake["direction"] = "LEFT"
+        elif char == "d" and last_direction != "LEFT":
+            snake["direction"] = "RIGHT"
+
+        if last_direction != snake["direction"]:
+            snake["last_direction"] = last_direction
+            update_world()
+
 
 def start_game() -> None:
-    pynput.keyboard.Listener(on_press=update_snake_direction).start()
     clear_terminal()
 
     while True:
         if time.perf_counter() - world["last_update"] > 0.25:
             update_world()
 
+        update_snake_direction()
+
+
+fd = sys.stdin.fileno()
+attr = termios.tcgetattr(fd)
+
+tty.setraw(fd)
+
 start_game()
+
+termios.tcsetattr(fd, termios.TCSANOW, attr)

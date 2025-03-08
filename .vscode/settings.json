@@ -10,7 +10,6 @@
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"
     },
-    "python.formatting.provider": "none",
     "workbench.colorTheme": "Dainty – One Dark Pro (chroma 0, lightness 1)",
-    "workbench.iconTheme": "material-icon-theme"
+    "workbench.iconTheme": "material-icon-theme",
 }

@@ -1,20 +1,17 @@
 {
     "recommendations": [
-        // Update `../.devcontainer/devcontainer.json` as well.
         "albert.tabout",
         "alexanderte.dainty-one-dark-pro-vscode",
         "christian-kohler.path-intellisense",
         "donjayamanne.githistory",
         "gruntfuggly.todo-tree",
         "kevinrose.vsc-python-indent",
-        "leonardssh.vscord",
         "mhutchie.git-graph",
         "ms-python.black-formatter",
         "ms-python.pylint",
         "ms-python.python",
         "pkief.material-icon-theme",
-        "redhat.vscode-yaml",
-        "trond-snekvik.simple-rst",
+        "wakatime.vscode-wakatime",
         "yzhang.markdown-all-in-one",
     ],
     "unwantedRecommendations": [
